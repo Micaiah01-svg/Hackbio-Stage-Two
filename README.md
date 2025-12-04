@@ -1,131 +1,123 @@
-**Bone Marrow Single-Cell RNA-Seq Analysis - HackBio Stage 2**
+**HackBio Stage 2 Project: Single-Cell RNA-Seq Analysis of PBMCs**
 
 **Overview**
 
-This notebook demonstrates a **complete single-cell RNA sequencing (scRNA-seq) analysis pipeline** on human bone marrow cells. It uses **Scanpy** for data processing and visualization, **Decoupler** for cell type annotation, and generates a **LinkedIn carousel presentation** summarizing key results.
+This project reproduces a core single-cell RNA-seq analysis pipeline using **Scanpy** and **Decoupler**, starting from raw counts to biologically interpretable cell type clusters. The analysis was performed on a publicly available PBMC dataset (peripheral blood mononuclear cells).
 
-The goals are:
+The main goals of the project:
 
-- Explore cellular diversity in bone marrow
-- Identify key cell types and lineage-specific marker genes
-- Generate clear visualizations and a professional presentation
+- Preprocess the single-cell RNA-seq data.
+- Perform dimensionality reduction and clustering.
+- Identify cell types using key lineage markers and PanglaoDB reference.
+- Visualize the dataset using UMAP with cluster and **cell type annotations**.
+- Generate a LinkedIn carousel summarizing the results.
 
-**Stepwise Tutorial**
+**Data Source**
 
-**Step 1: Install Dependencies**
+- Publicly available PBMC dataset (pbmc.h5ad) hosted on GitHub.
+- Dataset contains raw counts for ~10,000 single cells and ~20,000 genes.
+- The dataset represents peripheral blood mononuclear cells, not bone marrow.
 
-The notebook requires the following Python packages:
+**Methodology**
 
-- scanpy: for scRNA-seq processing
-- pandas and numpy: for data manipulation
-- decoupler: to access curated gene sets (PanglaoDB) for cell type annotation
-- igraph and leidenalg: for clustering
-- python-pptx: to create PowerPoint presentations
-- matplotlib: for plotting
+**1\. Data Preprocessing**
 
-pip install scanpy pandas matplotlib decoupler-python python-pptx igraph leidenalg
+- **Filtering:** Removed low-quality cells (<200 genes) and genes expressed in <3 cells.
+- **Mitochondrial filtering:** Cells with >10% mitochondrial reads were removed.
+- **Normalization:** Total counts per cell were scaled to 10,000.
+- **Log Transformation:** Applied log1p transformation to normalize gene expression.
+- **Highly Variable Genes (HVGs):** Selected the top 2000 most variable genes.
+- **Scaling:** All expression values scaled to unit variance and zero mean.
 
-**Step 2: Download and Load the Dataset**
+**2\. Dimensionality Reduction & Clustering**
 
-- Automatically downloads the .h5ad bone marrow dataset if not already present
-- Loads it into an **AnnData object**, the standard data structure for scRNA-seq analysis in Python
+- **PCA:** Reduced dimensionality to the top 40 PCs.
+- **Neighbors graph:** Built using 10 nearest neighbors.
+- **UMAP:** Visualized in 2D space.
+- **Clustering:** Leiden algorithm (resolution = 0.5) to detect clusters.
 
-**Explanation:** The dataset contains gene expression counts per cell, plus metadata (cell types, donor info, disease stage, etc.).
+**3\. Cell Type Identification**
 
-**Step 3: Preprocess the Data**
+- **Reference:** PanglaoDB marker genes for human immune cells.
+- **Markers analyzed:** HSPCs (CD34), NK cells (NKG7, PRF1, GZMB), T cells (CD3D, CD4, CD8A), B cells (MS4A1, CD19), Plasma cells (SDC1), Monocytes (CSF1R, IL1B), Megakaryocytes (PF4, PPBP), Erythroid cells (HBB, GATA1).
+- **Cluster annotation:** Clusters were annotated based on mean expression of key markers.
 
-- **Filter low-quality cells:** removes cells with too few genes
-- **Filter low-expression genes:** removes genes expressed in very few cells
-- **Check mitochondrial content:** high mitochondrial RNA may indicate stressed or dying cells
-- **Normalize counts:** ensures comparability across cells
-- **Log-transform:** reduces skew in expression values
-- **Select highly variable genes (HVGs):** focuses on genes that capture biological variability
-- **Scale data:** standardizes expression for downstream analyses
+| **Cluster** | **Cell Type** |
+| --- | --- |
+| 0   | HSPCs |
+| 1   | Monocytes |
+| 2   | Monocytes |
+| 3   | NK Cells |
+| 4   | B Cells |
+| 5   | T Cells |
+| 6   | Megakaryocytes |
+| 7   | Plasma Cells |
+| 8   | Erythroid Cells |
 
-**Explanation:** This step ensures that only high-quality, biologically informative data is analyzed.
+**4\. Visualization**
 
-**Step 4: Dimensionality Reduction & Clustering**
+- **UMAP with cluster IDs**: Colored by Leiden clusters.
+- **UMAP with cell type labels**: Cluster centroids annotated with predicted cell types.
+- **LinkedIn carousel:** Includes UMAPs, cell type table, and key biological insights. Carousel is saved locally (HackBio_SingleCell_Analysis.pptx) for immediate download.
 
-- **PCA (Principal Component Analysis):** reduces dimensionality while retaining key variation
-- **Compute neighbors:** builds a graph connecting similar cells
-- **UMAP (Uniform Manifold Approximation and Projection):** projects cells into 2D space for visualization
-- **Leiden clustering:** identifies groups of similar cells
+**5\. Statistical Considerations**
 
-**Explanation:** PCA and UMAP reduce complexity, while Leiden clusters reveal biologically meaningful cell populations.
+- Mean expression of key markers per cluster was calculated to confirm cell type identity.
+- Peripheral blood assignment justified based on:
+  - Presence of expected PBMC populations: NK cells, T cells, B cells, monocytes.
+  - HSPCs present but in minor proportion compared to bone marrow datasets.
+  - Relative abundance patterns consistent with healthy donor peripheral blood.
 
-**Step 5: Cell Type Annotation**
+**Key Biological Insights**
 
-- **Retrieve PanglaoDB markers:** curated gene sets for human cell types
-- **Map markers to Ensembl IDs:** ensures consistency with the dataset
-- **Assign predicted cell types to clusters:** matches clusters to known cell types
+- Largest cluster enriched for **HSPCs**, reflecting progenitor cells in circulation.
+- **Monocytes** and **NK cells** detected in expected proportions for PBMCs.
+- **T cells** and **B cells** represented typical lymphocyte populations.
+- **Plasma cells** and **megakaryocytes** detected at low abundance, consistent with peripheral blood.
+- Sample likely represents a healthy donor with balanced immune cell composition.
 
-Example predicted cell types:
+**Dependencies**
 
-- Cluster 0 → Hematopoietic Stem/Progenitor Cells (HSPCs)
-- Cluster 1 → Monocytes / Macrophages
-- Cluster 3 → NK Cells / Cytotoxic Lymphocytes
-- Cluster 4 → B Cells / Lymphocytes
-- Cluster 6 → Megakaryocytes / Platelets
-- Cluster 8 → Erythroid Lineage Cells
+- Python 3.9+
+- Packages:
+  - scanpy >= 1.9
+  - decoupler >= 0.3
+  - pandas
+  - numpy
+  - matplotlib
+  - pptx
 
-**Explanation:** Each cluster is labeled with a likely cell type based on known marker gene expression.
+Install via pip:
 
-**Step 6: Key Marker Gene Expression**
+pip install scanpy decoupler pandas numpy matplotlib python-pptx
 
-- Calculates the average expression of **lineage-specific markers** per cluster
-- Examples: CD34 for HSPCs, CD3D for T cells, MPO for myeloid cells
+**Workflow Instructions**
 
-**Explanation:** Helps confirm the identity of clusters and interpret their biological roles.
+- Clone or download the repository.
+- Run the notebook single_cell_pipeline.ipynb sequentially.
+- Ensure internet connection to download the PBMC dataset.
+- The UMAP plots will display inline.
+- LinkedIn carousel (HackBio_SingleCell_Analysis.pptx) will be saved locally for immediate use.
 
-**Step 7: Generate UMAP Visualizations**
+**Expected Outputs**
 
-- **UMAP 1 - Clusters:** cells colored by Leiden cluster ID
-- **UMAP 2 - Cell Type Labels:** cells labeled with predicted cell types
+- **Preprocessed AnnData object** with filtered cells and highly variable genes.
+- **UMAP plots**:
+  - Colored by cluster ID.
+  - Annotated with cell types.
+- **Cluster-to-cell type table**.
+- **Downloadable LinkedIn carousel** including UMAP, cell types, and insights.
+- **Key marker expression per cluster** (for reproducibility and verification).
 
-**Adjustments:**
+**Notes**
 
-- Labels are positioned for readability
-- Colormap chosen for clarity
-- Both visualizations are saved locally
+- All steps are modular with clearly commented code blocks.
+- Figures and outputs can be adjusted by changing plotting parameters (font size, figure size).
+- Cell type assignments are based on marker gene expression; proportions should be interpreted relative to peripheral blood expectations.
+- For more rigorous tissue assignment, users can compare to publicly available PBMC and bone marrow datasets.
 
-**Step 8: Create LinkedIn Carousel Presentation**
+**References**
 
-- Uses **python-pptx** to generate a downloadable PowerPoint file
-- Slides include:
-  - Project title, author, and tools used
-  - UMAP with clusters
-  - UMAP with cell type annotations
-  - Predicted cell types per cluster (table)
-  - Biological interpretation of cell types
-  - Key insights
-
-**Explanation:** This carousel is **downloadable immediately** after running the notebook. It summarizes the analysis in a professional, shareable format.
-
-**Step 9: Save Processed Data**
-
-- Saves preprocessed AnnData object for reuse
-- File: bone_marrow_processed.h5ad
-
-**Explanation:** Preserves the cleaned, normalized, and annotated data for future analysis without re-running the pipeline.
-
-**Key Insights**
-
-- Largest cluster corresponds to HSPCs → strong progenitor population
-- Minor populations like NK cells and monocytes are detectable → functional diversity
-- Marker gene expression confirms cluster identities
-
-**Step 10: How to Run the Notebook**
-
-- Open the notebook in Jupyter or Colab
-- Run **all cells sequentially**
-- Outputs:
-  - UMAP plots (clusters and annotated)
-  - LinkedIn carousel presentation (SingleCell_Carousel.pptx)
-  - Processed AnnData object (bone_marrow_processed.h5ad)
-
-**Author**
-
-**Micaiah Adedeji Adeoluwa**
-
-- HackBio Stage 2 Project
-- Focus: Single-Cell Genomics, Cell Type Annotation, Computational Biology
+- Wolf FA, Angerer P, Theis FJ. SCANPY: large-scale single-cell gene expression data analysis. Genome Biology (2018).
+- PanglaoDB: Database for single-cell RNA-seq marker genes.
+- Decoupler: Functional genomics and network-based cell type inference in Python.
